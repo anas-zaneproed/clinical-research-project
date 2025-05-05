@@ -12,6 +12,20 @@ def create_zip_file(files):
     zip_buffer.seek(0)
     return zip_buffer
 
+# Define your form templates here
+FORM_TEMPLATES = {
+    "Investigator_Brochure.docx": "This is a template for Investigator Brochure...",
+    "Informed_Consent_Form.docx": "Template for Informed Consent Form...",
+    "Protocol.docx": "Study Protocol Template...",
+    "Case_Report_Form.docx": "CRF Template...",
+    "Monitoring_Plan.docx": "Monitoring Plan Template...",
+    "Site_Selection_Form.docx": "Site Selection Template...",
+    "Ethics_Approval.docx": "Ethics Committee Approval Template...",
+    "Investigator_Agreement.docx": "Investigator Agreement Template...",
+    "Drug_Accountability_Form.docx": "Drug Accountability Template...",
+    "Safety_Report.docx": "Safety Reporting Template..."
+}
+
 # Streamlit app setup
 st.set_page_config(page_title="eTMF Training App", layout="wide")
 
@@ -22,9 +36,9 @@ st.title("eTMF Training App for Clinical Research")
 st.write("""
 Welcome to the eTMF training platform! Follow these steps:
 1. Read the provided trial scenario.
-2. Fill out the required eTMF forms.
-3. Download the forms as a ZIP file.
-4. Submit the ZIP file for assessment.
+2. Download and fill out the required eTMF forms.
+3. Upload your completed forms.
+4. Submit the forms for assessment.
 """)
 
 # Step 1: Trial Scenario
@@ -32,30 +46,63 @@ st.header("Trial Scenario")
 trial_scenario = "This is a placeholder for the trial scenario. Replace this text with the actual scenario content."
 st.text_area("Scenario Details", trial_scenario, height=200, disabled=True)
 
-# Step 2: Fill Forms
-st.header("Fill eTMF Forms")
-form_files = {}
-for i in range(1, 11):
-    form_name = f"Form_{i}.txt"
-    form_content = st.text_area(f"{form_name}", placeholder=f"Enter details for {form_name}")
-    form_files[form_name] = form_content
+# Step 2: Download Templates Section
+st.header("Download Form Templates")
+st.write("Download the templates below, fill them out, and then upload them in the next section.")
 
-# Step 3: Download ZIP
-st.header("Download Completed Forms")
-if st.button("Generate ZIP"):
-    if all(content.strip() for content in form_files.values()):
-        zip_file = create_zip_file(form_files)
+# Create two columns for better organization
+col1, col2 = st.columns(2)
+
+# Display download buttons for each template
+with col1:
+    for i, (template_name, template_content) in enumerate(list(FORM_TEMPLATES.items())[:5]):
         st.download_button(
-            label="Download ZIP",
-            data=zip_file,
-            file_name="eTMF_forms.zip",
-            mime="application/zip"
+            label=f"Download {template_name}",
+            data=template_content,
+            file_name=template_name,
+            mime="application/octet-stream"
         )
-    else:
-        st.error("Please fill out all forms before generating the ZIP.")
 
-# Step 4: Submit ZIP
-st.header("Submit Your ZIP File")
-uploaded_file = st.file_uploader("Upload your ZIP file for assessment", type="zip")
-if uploaded_file is not None:
-    st.success("Your file has been uploaded successfully!")
+with col2:
+    for i, (template_name, template_content) in enumerate(list(FORM_TEMPLATES.items())[5:]):
+        st.download_button(
+            label=f"Download {template_name}",
+            data=template_content,
+            file_name=template_name,
+            mime="application/octet-stream"
+        )
+
+# Step 3: Upload Completed Forms
+st.header("Upload Completed Forms")
+uploaded_files = st.file_uploader(
+    "Upload your completed forms (ZIP or individual files)", 
+    type=["zip", "docx", "txt", "pdf"],
+    accept_multiple_files=True
+)
+
+if uploaded_files:
+    st.success(f"Successfully uploaded {len(uploaded_files)} file(s)!")
+    
+    # If user uploaded individual files, offer to zip them
+    if len(uploaded_files) > 1 and not any(file.name.endswith('.zip') for file in uploaded_files):
+        if st.button("Create ZIP from uploaded files"):
+            files_to_zip = {}
+            for uploaded_file in uploaded_files:
+                files_to_zip[uploaded_file.name] = uploaded_file.getvalue()
+            
+            zip_file = create_zip_file(files_to_zip)
+            st.download_button(
+                label="Download as ZIP",
+                data=zip_file,
+                file_name="completed_forms.zip",
+                mime="application/zip"
+            )
+
+# Step 4: Submit for Assessment
+st.header("Submit for Assessment")
+if st.button("Submit Documents for Assessment"):
+    if uploaded_files:
+        st.success("Your documents have been submitted for assessment!")
+        # Here you would add your assessment logic
+    else:
+        st.error("Please upload your completed forms before submitting.")
